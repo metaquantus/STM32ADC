@@ -1,6 +1,6 @@
 {
   "name": "STM32ADC",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Arduino STM32 ADC advanced support library",
   "keywords": "arduino, stm32, adc, stm32duino",
   "repository":
@@ -13,7 +13,7 @@
     {
         "name": "Carlos Villegas",
         "maintainer": true
-    },
+    }
   ],
   "license": "MIT",
   "frameworks": "arduino",
