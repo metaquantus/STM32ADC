@@ -8,7 +8,7 @@ class STM32ADC {
 
 public:
     STM32ADC(uint32_t ulPin, int resolution = 12, uint32_t cprescaler = ADC_CLOCK_SYNC_PCLK_DIV4, uint32_t stime = ADC_SAMPLETIME_3CYCLES, bool contConvMode = false, bool useInt = false) :
-        _ulPin(ulPin), _clockPrescaler(cprescaler), _samplingTime(stime), _useInterrupt(useInt)
+        _ulPin(ulPin), _clockPrescaler(cprescaler), _samplingTime(stime), _useInterrupt(useInt), _connected(false)
     {
         setResolution(resolution);
         setContinuousConvMode(contConvMode);
@@ -31,7 +31,13 @@ public:
         _continuousConvMode = st;
     }
     bool begin();
+    // this indicates ADC was configured and is being used
+    bool isConnected() {
+        return _connected;
+    }
+    bool end();
     virtual uint32_t getValue();
+    // for debugging
     uint32_t getInterrupts();
 
     static void onADCInterrupt() {
@@ -49,6 +55,7 @@ protected:
     FunctionalState _continuousConvMode = ENABLE;
     bool _useInterrupt = true;
     static STM32ADC* _instance;
+    bool _connected = false;
 
     virtual void onInterrupt() {}
 };

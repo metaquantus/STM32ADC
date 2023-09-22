@@ -102,7 +102,7 @@ bool STM32ADC::begin() {
         HAL_NVIC_SetPriority(ADC_IRQn, 0, 0);
         HAL_NVIC_EnableIRQ(ADC_IRQn);
     }
-
+    // only one channel supported at the moment
     chConf.Channel = _channel;
     chConf.Rank = 1;
     chConf.SamplingTime = _samplingTime;
@@ -110,12 +110,36 @@ bool STM32ADC::begin() {
     {
         return false;
     }
+    _connected = true;
 
     // request the conversion right away if in interrupt mode
     if ( _useInterrupt ) {
         HAL_ADC_Start_IT(&hadc);
     }
+    
     return true;
+}
+
+bool STM32ADC::end() {
+    if ( _useInterrupt ) {
+        HAL_NVIC_DisableIRQ(ADC_IRQn);
+    }
+
+    if (HAL_ADC_Stop(&hadc) != HAL_OK) {
+        /* Stop Conversation Error */
+        return false;
+    }
+
+    if (HAL_ADC_DeInit(&hadc) != HAL_OK) {
+        return false;
+    }
+
+    if (__LL_ADC_COMMON_INSTANCE(hadc.Instance) != 0U) {
+        LL_ADC_SetCommonPathInternalCh(
+            __LL_ADC_COMMON_INSTANCE(AdcHandle.Instance),
+            LL_ADC_PATH_INTERNAL_NONE);
+    }
+    _connected = false;
 }
 
 uint32_t STM32ADC::getValue() {
