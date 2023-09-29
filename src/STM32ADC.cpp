@@ -112,11 +112,6 @@ bool STM32ADC::begin() {
     }
     _connected = true;
 
-    // request the conversion right away if in interrupt mode
-    if ( _useInterrupt ) {
-        HAL_ADC_Start_IT(&hadc);
-    }
-    
     return true;
 }
 
@@ -142,7 +137,20 @@ bool STM32ADC::end() {
     _connected = false;
 }
 
+void STM32ADC::start() {
+    _started = true;
+    if (_useInterrupt) {
+        HAL_ADC_Start_IT(&hadc);
+    }
+}
+
 uint32_t STM32ADC::getValue() {
+    if (!_started) {
+        _started = true;
+        if (_useInterrupt) {
+            HAL_ADC_Start_IT(&hadc);
+        }
+    }
     if (!_useInterrupt)
     {
         HAL_ADC_Start(&hadc);
@@ -173,6 +181,11 @@ void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef* hadc0)
     STM32ADC_RES = HAL_ADC_GetValue(&hadc);
     adcIntrCount++;
     STM32ADC::onADCInterrupt();
+}
+
+void HAL_ADC_ErrorCallback(ADC_HandleTypeDef *hadc0)
+{
+  STM32ADC::onADCError();
 }
 
 #ifdef __cplusplus
