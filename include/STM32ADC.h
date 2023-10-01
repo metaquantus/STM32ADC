@@ -1,8 +1,8 @@
 #ifndef STM32ADC_H
 #define STM32ADC_H
 
-#include "Arduino.h"
-#include "analog.h"
+#include <Arduino.h>
+#include <analog.h>
 
 class STM32ADC {
 

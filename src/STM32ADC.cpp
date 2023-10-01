@@ -135,6 +135,7 @@ bool STM32ADC::end() {
             LL_ADC_PATH_INTERNAL_NONE);
     }
     _connected = false;
+    return true;
 }
 
 void STM32ADC::start() {
