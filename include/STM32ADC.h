@@ -4,23 +4,25 @@
 #include <Arduino.h>
 #include <analog.h>
 
+#define STM32ADC_MAX_CHANNELS 16
+
 class STM32ADC {
 
 public:
-    STM32ADC(uint32_t ulPin, int resolution = 12, uint32_t cprescaler = ADC_CLOCK_SYNC_PCLK_DIV4, uint32_t stime = ADC_SAMPLETIME_3CYCLES, bool contConvMode = false, bool useInt = false) :
-        _ulPin(ulPin), _clockPrescaler(cprescaler), _samplingTime(stime), _useInterrupt(useInt), _connected(false), _started(false)
+    STM32ADC(int resolution = 12, uint32_t cprescaler = ADC_CLOCK_SYNC_PCLK_DIV8, bool contConvMode = true, bool useInt = true) :
+        _clockPrescaler(cprescaler), _useInterrupt(useInt), _connected(false), _started(false)
     {
         setResolution(resolution);
         setContinuousConvMode(contConvMode);
         _instance = this;
     }
+    // following functions to be called before begin()
+
     void useInterrupt(bool i) {
         _useInterrupt = i;
     }
     void setResolution(int r);
-    void setSamplingTime(uint32_t st) {
-        _samplingTime = st;
-    }
+
     void setClockPrescaler(uint32_t cp) {
         _clockPrescaler = cp;
     }
@@ -31,7 +33,13 @@ public:
         _continuousConvMode = st;
     }
 
-    // initializes the ADC hardware
+    // adds a new conversion channel by Pin name, use pseudo-pins ATEMP, AVREF, or AVBAT for internal channels.
+    // returns the rank (logical channel number) for this channel or -1 if no more channels available (max 16 conversions)
+    // Each channel can have different sampling time
+    // In MCUs with more than one ADC, all channels must belong to the same ADC unit. 
+    int addChannel(uint32_t _ulPin, uint32_t stime);
+
+    // initializes the ADC hardware & channels
     bool begin();
     // this indicates ADC was configured and is being used
     bool isConnected() {
@@ -41,7 +49,8 @@ public:
     // start conversion if in interrupt mode
     void start();
 
-    virtual uint32_t getValue();
+    // gets the conversion value for the given channel rank (logical channel nummber)
+    virtual uint32_t getValue(int rank);
     // for debugging
     uint32_t getInterrupts();
 
@@ -58,19 +67,22 @@ public:
     }
 
 protected:
-    uint32_t _ulPin;
-    uint32_t _channel = ADC_CHANNEL_0;
+    uint32_t _ulPins[STM32ADC_MAX_CHANNELS];
+    int _channels; // number of channels to convert, max 16
+    uint16_t _dmaBuf[STM32ADC_MAX_CHANNELS]; // DMA data buffer for conversion
     uint32_t _resolution = ADC_RESOLUTION_12B;
     uint32_t _clockPrescaler = ADC_CLOCK_SYNC_PCLK_DIV8;
-    uint32_t _samplingTime = ADC_SAMPLETIME_480CYCLES;
+    uint32_t _samplingTimes[STM32ADC_MAX_CHANNELS]; // e.g. ADC_SAMPLETIME_480CYCLES, each channel has its own sampletime
     FunctionalState _continuousConvMode = ENABLE;
     bool _useInterrupt = true;
-    static STM32ADC* _instance;
     bool _connected = false;
     bool _started = false;
 
+    static STM32ADC* _instance;
+
     virtual void onInterrupt() {}
     virtual void onError() {}
+
 };
 
 
